@@ -157,40 +157,29 @@ function renderBreakdown(nik) {
 
 function renderInfoGrid(data, nik) {
     const grid = document.getElementById('infoGrid');
+    // Data bisa dari API eksternal atau local parser
+    const d = data?.data || data?.result || data || {};
 
-    // Hitung umur dari tanggal lahir
-    const tglRaw = nik.slice(6, 12);
-    let dd = parseInt(tglRaw.slice(0,2));
-    const mm = parseInt(tglRaw.slice(2,4));
-    const yy = parseInt(tglRaw.slice(4,6));
-    const isPerempuan = dd > 40;
-    if (isPerempuan) dd -= 40;
+    const isP = (d.jenisKelamin || '').includes('PEREMPUAN') ||
+                (d.jenisKelamin || '').includes('Perempuan');
 
-    const tahun = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy;
-    const birthDate = new Date(tahun, mm - 1, dd);
-    const age = calcAge(birthDate);
-    const zodiak = getZodiak(dd, mm);
-    const hari   = getHari(birthDate);
-
-    const genderLabel = isPerempuan
+    const genderLabel = isP
         ? `<span class="gender-badge gender-f">♀ Perempuan</span>`
         : `<span class="gender-badge gender-m">♂ Laki-laki</span>`;
 
-    // Ambil data dari API response — tiap API bisa beda struktur
-    const d = data?.data || data?.result || data || {};
-
     const items = [
-        { key: 'Provinsi',       icon: 'fa-map',              val: d.provinsi       || d.province    || '-' },
-        { key: 'Kota/Kabupaten', icon: 'fa-city',             val: d.kota           || d.city        || d.kabupaten || '-' },
-        { key: 'Kecamatan',      icon: 'fa-location-dot',     val: d.kecamatan      || d.district    || '-' },
-        { key: 'Kode Wilayah',   icon: 'fa-code',             val: nik.slice(0,6) },
-        { key: 'Jenis Kelamin',  icon: 'fa-venus-mars',       val: genderLabel,       raw: true },
-        { key: 'Tgl Lahir',      icon: 'fa-cake-candles',     val: `${String(dd).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${tahun}`, highlight: true },
-        { key: 'Hari Lahir',     icon: 'fa-calendar-day',     val: hari },
-        { key: 'Zodiak',         icon: 'fa-star',             val: zodiak },
-        { key: 'Umur',           icon: 'fa-hourglass-half',   val: age + ' tahun',    highlight: true },
-        { key: 'No. Urut',       icon: 'fa-list-ol',          val: nik.slice(12,16) },
-        { key: 'NIK Lengkap',    icon: 'fa-id-card',          val: nik.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4'), full: true, highlight: true },
+        { key: 'Provinsi',           icon: 'fa-map',            val: d.provinsi   || '-' },
+        { key: 'Kabupaten/Kota',     icon: 'fa-city',           val: d.kota       || '(data dari API)' },
+        { key: 'Kecamatan',          icon: 'fa-location-dot',   val: d.kecamatan  || '(data dari API)' },
+        { key: 'Kode Wilayah',       icon: 'fa-code',           val: d.kodeWilayah || nik.slice(0,6) },
+        { key: 'Jenis Kelamin',      icon: 'fa-venus-mars',     val: genderLabel,  raw: true },
+        { key: 'Tanggal Lahir',      icon: 'fa-cake-candles',   val: d.tanggalLahir || '-', highlight: true },
+        { key: 'Hari Lahir',         icon: 'fa-calendar-day',   val: d.hariLahir  || '-' },
+        { key: 'Zodiak',             icon: 'fa-star',           val: d.zodiak     || '-' },
+        { key: 'Umur',               icon: 'fa-hourglass-half', val: d.umur       || '-', highlight: true },
+        { key: 'Ultah Berikutnya',   icon: 'fa-gift',           val: d.ultahBerikutnya || '-' },
+        { key: 'Nomor Urut',         icon: 'fa-list-ol',        val: d.nomorUrut  || nik.slice(12,16) },
+        { key: 'NIK Lengkap',        icon: 'fa-id-card',        val: nik.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4'), full: true, highlight: true },
     ];
 
     grid.innerHTML = items.map(item => `
@@ -218,27 +207,20 @@ function copyAllInfo() {
     const d   = currentResult?.data || currentResult?.result || currentResult || {};
     const nik = currentNik;
 
-    const tglRaw = nik.slice(6,12);
-    let dd = parseInt(tglRaw.slice(0,2));
-    const mm = parseInt(tglRaw.slice(2,4));
-    const yy = parseInt(tglRaw.slice(4,6));
-    const isP = dd > 40; if (isP) dd -= 40;
-    const tahun = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy;
-    const birthDate = new Date(tahun, mm-1, dd);
-
     const text = [
         `=== NIK PARSER PRO — by ryaakbar ===`,
-        `NIK         : ${nik}`,
-        `Provinsi    : ${d.provinsi || d.province || '-'}`,
-        `Kota/Kab    : ${d.kota || d.city || d.kabupaten || '-'}`,
-        `Kecamatan   : ${d.kecamatan || d.district || '-'}`,
-        `Kode Wil    : ${nik.slice(0,6)}`,
-        `Jenis Kel   : ${isP ? 'Perempuan' : 'Laki-laki'}`,
-        `Tgl Lahir   : ${String(dd).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${tahun}`,
-        `Hari Lahir  : ${getHari(birthDate)}`,
-        `Zodiak      : ${getZodiak(dd, mm)}`,
-        `Umur        : ${calcAge(birthDate)} tahun`,
-        `No. Urut    : ${nik.slice(12,16)}`,
+        `NIK              : ${nik}`,
+        `Provinsi         : ${d.provinsi || '-'}`,
+        `Kabupaten/Kota   : ${d.kota || '-'}`,
+        `Kecamatan        : ${d.kecamatan || '-'}`,
+        `Kode Wilayah     : ${d.kodeWilayah || nik.slice(0,6)}`,
+        `Jenis Kelamin    : ${d.jenisKelamin || '-'}`,
+        `Tanggal Lahir    : ${d.tanggalLahir || '-'}`,
+        `Hari Lahir       : ${d.hariLahir || '-'}`,
+        `Zodiak           : ${d.zodiak || '-'}`,
+        `Umur             : ${d.umur || '-'}`,
+        `Ultah Berikutnya : ${d.ultahBerikutnya || '-'}`,
+        `Nomor Urut       : ${d.nomorUrut || nik.slice(12,16)}`,
     ].join('\n');
 
     navigator.clipboard.writeText(text).then(() => {
@@ -251,28 +233,20 @@ function exportJson() {
     const d   = currentResult?.data || currentResult?.result || currentResult || {};
     const nik = currentNik;
 
-    const tglRaw = nik.slice(6,12);
-    let dd = parseInt(tglRaw.slice(0,2));
-    const mm = parseInt(tglRaw.slice(2,4));
-    const yy = parseInt(tglRaw.slice(4,6));
-    const isP = dd > 40; if (isP) dd -= 40;
-    const tahun = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy;
-    const birthDate = new Date(tahun, mm-1, dd);
-
     const obj = {
         meta: { tool: 'NIK Parser Pro by ryaakbar', parsedAt: new Date().toISOString() },
         nik,
-        provinsi:    d.provinsi || d.province || null,
-        kota:        d.kota || d.city || d.kabupaten || null,
-        kecamatan:   d.kecamatan || d.district || null,
-        kodeWilayah: nik.slice(0,6),
-        jenisKelamin: isP ? 'Perempuan' : 'Laki-laki',
-        tanggalLahir: `${String(dd).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${tahun}`,
-        hariLahir:   getHari(birthDate),
-        zodiak:      getZodiak(dd, mm),
-        umur:        calcAge(birthDate),
-        nomorUrut:   nik.slice(12,16),
-        raw:         currentResult,
+        provinsi:         d.provinsi         || null,
+        kota:             d.kota             || null,
+        kecamatan:        d.kecamatan        || null,
+        kodeWilayah:      d.kodeWilayah      || nik.slice(0,6),
+        jenisKelamin:     d.jenisKelamin     || null,
+        tanggalLahir:     d.tanggalLahir     || null,
+        hariLahir:        d.hariLahir        || null,
+        zodiak:           d.zodiak           || null,
+        umur:             d.umur             || null,
+        ultahBerikutnya:  d.ultahBerikutnya  || null,
+        nomorUrut:        d.nomorUrut        || nik.slice(12,16),
     };
 
     const a = document.createElement('a');
@@ -292,12 +266,13 @@ function newScan() {
 // ── HISTORY ───────────────────────────────
 function addToHistory(nik, data) {
     const d = data?.data || data?.result || data || {};
+    // Pastiin info ga kosong
     const existing = history.findIndex(h => h.nik === nik);
     if (existing !== -1) history.splice(existing, 1);
 
     history.unshift({
         nik,
-        info: `${d.provinsi || d.province || '-'} · ${d.kota || d.city || '-'}`,
+        info: `${d.provinsi || '-'} · ${d.kota || d.jenisKelamin || '-'}`,
         ts: Date.now(),
     });
 
