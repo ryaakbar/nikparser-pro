@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIK Parser Pro — by ryaakbar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="marquee-top">
+    <div class="marquee-content">
+        NIK PARSER PRO <span class="marquee-dot">◆</span>
+        INDONESIA KTP DECODER <span class="marquee-dot">◆</span>
+        FREE NO SIGNUP <span class="marquee-dot">◆</span>
+        BUILT BY RYAAKBAR <span class="marquee-dot">◆</span>
+        POWERED BY NEKOLABS <span class="marquee-dot">◆</span>
+        INSTANT DECODE <span class="marquee-dot">◆</span>
+        NIK PARSER PRO <span class="marquee-dot">◆</span>
+        INDONESIA KTP DECODER <span class="marquee-dot">◆</span>
+        FREE NO SIGNUP <span class="marquee-dot">◆</span>
+        BUILT BY RYAAKBAR <span class="marquee-dot">◆</span>
+        POWERED BY NEKOLABS <span class="marquee-dot">◆</span>
+        INSTANT DECODE <span class="marquee-dot">◆</span>
+    </div>
+</div>
+
+<nav class="navbar" id="navbar">
+    <div class="brand-container">
+        <div class="brand-icon-wrap">
+            <i class="fa-solid fa-id-card" style="color:white;font-size:0.85rem"></i>
+        </div>
+        <div class="brand-glitch">NIK<span>Parser</span></div>
+    </div>
+    <div class="nav-right">
+        <div class="status-pill">
+            <div class="dot-live"></div>
+            ONLINE
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- HERO -->
+    <div class="hero-header reveal">
+        <div class="hero-badge">🪪 NIK Parser Pro — Free</div>
+        <h1 class="hero-title">Decode NIK <span class="grad-text">Indonesia,</span><br>Seketika.</h1>
+        <p class="hero-sub">Urai informasi lengkap dari Nomor Induk Kependudukan 16 digit. Provinsi, kota, kecamatan, tanggal lahir, dan jenis kelamin.</p>
+    </div>
+
+    <!-- INPUT CARD -->
+    <div class="glass-card reveal delay-1" id="inputCard">
+        <div class="card-header">
+            <div class="card-header-icon">
+                <i class="fa-solid fa-id-card" style="color:white"></i>
+            </div>
+            <div>
+                <div class="header-label">🔍 NIK Decoder</div>
+                <div class="header-title">Masukkan NIK 16 digit</div>
+            </div>
+        </div>
+        <div class="card-body">
+
+            <!-- Input -->
+            <div class="nik-input-wrap">
+                <span class="nik-icon">
+                    <i class="fa-solid fa-hashtag" style="font-size:13px"></i>
+                </span>
+                <input type="text" id="nikInput" class="nik-input"
+                    placeholder="3273 0105 0599 0001"
+                    maxlength="16" inputmode="numeric"
+                    oninput="onNikInput(this)"
+                    onkeydown="if(event.key==='Enter') parseNik()"
+                    autocomplete="off">
+                <div class="nik-input-right">
+                    <span class="nik-len-badge" id="nikLenBadge">0/16</span>
+                    <button class="nik-clear-btn" id="nikClearBtn" onclick="clearNik()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- NIK Segment visual -->
+            <div class="nik-segments" id="nikSegments">
+                <div class="nik-seg" id="seg-prov">
+                    <div class="nik-seg-val" id="segval-prov">--</div>
+                    <div class="nik-seg-label">Provinsi</div>
+                </div>
+                <div class="nik-seg" id="seg-kota">
+                    <div class="nik-seg-val" id="segval-kota">----</div>
+                    <div class="nik-seg-label">Kota/Kab</div>
+                </div>
+                <div class="nik-seg" id="seg-kec">
+                    <div class="nik-seg-val" id="segval-kec">------</div>
+                    <div class="nik-seg-label">Kecamatan</div>
+                </div>
+                <div class="nik-seg" id="seg-tgl">
+                    <div class="nik-seg-val" id="segval-tgl">------</div>
+                    <div class="nik-seg-label">Tgl Lahir</div>
+                </div>
+                <div class="nik-seg" id="seg-seq">
+                    <div class="nik-seg-val" id="segval-seq">----</div>
+                    <div class="nik-seg-label">No. Urut</div>
+                </div>
+            </div>
+
+            <button id="parseBtn" class="cyber-button" onclick="parseNik()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Parse NIK</span>
+                <span style="transition:transform 0.2s" class="btn-arrow">→</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading" class="glass-card loading-wrap hidden">
+        <div class="loader-ring"></div>
+        <div class="loader-text">Mengurai NIK...</div>
+        <div class="loader-progress"><div class="loader-bar"></div></div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="errorCard" class="glass-card error-card hidden">
+        <div class="error-icon-wrap">⚠️</div>
+        <div>
+            <div class="error-title">Gagal Parse NIK</div>
+            <div class="error-body" id="errorText">Terjadi kesalahan.</div>
+        </div>
+    </div>
+
+    <!-- RESULT CARD -->
+    <div id="resultCard" class="glass-card result-card hidden">
+
+        <!-- Header -->
+        <div class="result-header-bar">
+            <div class="result-nik-display" id="resultNikDisplay">-</div>
+            <div class="result-valid-badge"><span>●</span> VALID NIK</div>
+        </div>
+
+        <!-- NIK Breakdown visual -->
+        <div class="nik-breakdown">
+            <div class="breakdown-title">Struktur NIK</div>
+            <div class="breakdown-row" id="breakdownRow"></div>
+            <div class="breakdown-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Provinsi (2)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div> Kota/Kab (2)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Kecamatan (2)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f9a8d4"></div> Tgl Lahir (6)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div> No. Urut (4)</div>
+            </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid" id="infoGrid"></div>
+
+        <!-- Actions -->
+        <div class="result-actions">
+            <button class="act-btn btn-copy-nik" onclick="copyNik()">
+                <i class="fa-solid fa-copy"></i> Copy NIK
+            </button>
+            <button class="act-btn btn-copy-all" onclick="copyAllInfo()">
+                <i class="fa-solid fa-clipboard-list"></i> Copy Semua
+            </button>
+            <button class="act-btn btn-export" onclick="exportJson()">
+                <i class="fa-solid fa-file-code"></i> Export JSON
+            </button>
+            <button class="act-btn btn-new-scan" onclick="newScan()">
+                <i class="fa-solid fa-rotate-left"></i> Parse Baru
+            </button>
+        </div>
+
+    </div>
+
+    <!-- HISTORY CARD -->
+    <div class="glass-card reveal delay-2" id="historyCard" style="display:none">
+        <div class="history-header">
+            <div class="history-title">
+                <i class="fa-solid fa-clock-rotate-left" style="color:var(--blue-400)"></i>
+                Riwayat Parse
+            </div>
+            <button class="history-clear" onclick="clearHistory()">
+                <i class="fa-solid fa-trash-can"></i> Hapus Semua
+            </button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+    <footer class="sann-footer reveal">
+        <div class="footer-divider"></div>
+        <p class="footer-text">Powered by</p>
+        <p class="footer-brand">RYAAKBAR</p>
+        <p class="footer-sub">Free forever · No ads · No cap</p>
+    </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="scroll-btns" id="scrollBtns">
+    <button class="scroll-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+    <button class="scroll-btn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
