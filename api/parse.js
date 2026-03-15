@@ -1,4 +1,6 @@
-// api/parse.js — NIK Parser dengan multi-source + local fallback
+// api/parse.js — NIK Parser dengan database wilayah lokal + API fallback
+
+const WILAYAH = require('./wilayah.js');
 
 const PROVINSI = {
   '11':'Aceh','12':'Sumatera Utara','13':'Sumatera Barat','14':'Riau',
@@ -14,7 +16,7 @@ const PROVINSI = {
   '95':'Papua Pegunungan','96':'Papua Barat Daya',
 };
 
-function parseNikLocal(nik) {
+function parseNikFull(nik) {
   const kodeWilayah = nik.slice(0, 6);
   const kodeProv    = nik.slice(0, 2);
   const tglRaw      = nik.slice(6, 12);
@@ -30,55 +32,59 @@ function parseNikLocal(nik) {
   const tahun = yy <= 30 ? 2000 + yy : 1900 + yy;
   const tglLahir = `${String(dd).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${tahun}`;
 
-  // Hitung umur detail
-  const now = new Date();
-  const birth = new Date(tahun, mm-1, dd);
-  let years = now.getFullYear() - birth.getFullYear();
-  let months = now.getMonth() - birth.getMonth();
-  let days = now.getDate() - birth.getDate();
-  if (days < 0) { months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
-  if (months < 0) { years--; months += 12; }
+  // Lookup wilayah dari database lokal
+  const wilayah  = WILAYAH[kodeWilayah] || null;
+  const kotaKec  = wilayah ? wilayah.split('|') : null;
+  const kota      = kotaKec ? kotaKec[0] : null;
+  const kecamatan = kotaKec ? kotaKec[1] : null;
 
-  // Hitung hari menuju ulang tahun berikutnya
+  // Umur detail
+  const now   = new Date();
+  const birth = new Date(tahun, mm-1, dd);
+  let years   = now.getFullYear() - birth.getFullYear();
+  let months  = now.getMonth()    - birth.getMonth();
+  let days    = now.getDate()     - birth.getDate();
+  if (days   < 0) { months--; days   += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+  if (months < 0) { years--;  months += 12; }
+
+  // Ultah berikutnya
   let nextBday = new Date(now.getFullYear(), mm-1, dd);
   if (nextBday <= now) nextBday.setFullYear(now.getFullYear() + 1);
-  const diffMs = nextBday - now;
-  const diffDays = Math.ceil(diffMs / (1000*60*60*24));
-  const bmonths = Math.floor(diffDays / 30);
-  const bdays   = diffDays % 30;
+  const diffDays = Math.ceil((nextBday - now) / (1000*60*60*24));
+  const bMonths  = Math.floor(diffDays / 30);
+  const bDays    = diffDays % 30;
 
   // Zodiak
-  const zodiaks = [
+  const zodiakData = [
     [1,20,'Capricorn'],[2,19,'Aquarius'],[3,20,'Pisces'],[4,20,'Aries'],
     [5,21,'Taurus'],[6,21,'Gemini'],[7,23,'Cancer'],[8,23,'Leo'],
     [9,23,'Virgo'],[10,23,'Libra'],[11,22,'Scorpio'],[12,22,'Sagittarius'],
   ];
   let zodiak = 'Capricorn';
-  for (const [m, d, name] of zodiaks) {
-    if (mm === m && dd < d) { zodiak = name; break; }
-    if (mm === m && dd >= d) {
-      const next = zodiaks[m % 12];
-      zodiak = next ? next[2] : 'Capricorn';
+  for (let i = 0; i < zodiakData.length; i++) {
+    const [m, d, name] = zodiakData[i];
+    if (mm === m) {
+      zodiak = dd < d ? name : (zodiakData[(i+1) % 12][2]);
       break;
     }
   }
 
   const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][birth.getDay()];
-  const provinsi = PROVINSI[kodeProv] || 'Tidak diketahui';
 
   return {
     nik,
     kodeWilayah,
     kodeProv,
-    provinsi,
-    jenisKelamin: isPerempuan ? 'PEREMPUAN' : 'LAKI-LAKI',
-    tanggalLahir: tglLahir,
-    hariLahir: hari,
+    provinsi:         PROVINSI[kodeProv] || 'Tidak diketahui',
+    kota:             kota     || 'Tidak ada dalam database',
+    kecamatan:        kecamatan || 'Tidak ada dalam database',
+    jenisKelamin:     isPerempuan ? 'PEREMPUAN' : 'LAKI-LAKI',
+    tanggalLahir:     tglLahir,
+    hariLahir:        hari,
     zodiak,
-    umur: `${years} Tahun ${months} Bulan ${days} Hari`,
-    ultahBerikutnya: `${bmonths} Bulan ${bdays} Hari Lagi`,
+    umur:             `${years} Tahun ${months} Bulan ${days} Hari`,
+    ultahBerikutnya:  `${bMonths} Bulan ${bDays} Hari Lagi`,
     nomorUrut,
-    source: 'local',
   };
 }
 
@@ -90,48 +96,13 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ success: false, message: 'Method not allowed' });
 
   const { nik } = req.query;
-  if (!nik) return res.status(400).json({ success: false, message: 'NIK wajib diisi.' });
+  if (!nik)             return res.status(400).json({ success: false, message: 'NIK wajib diisi.' });
   if (!/^\d{16}$/.test(nik)) return res.status(400).json({ success: false, message: 'NIK harus 16 digit angka.' });
 
-  // Coba API eksternal dulu, fallback ke local parser
-  const APIs = [
-    `https://api.jagospot.my.id/api/nikparser?nik=${nik}`,
-    `https://api.siputzx.my.id/api/tools/nikparser?nik=${nik}`,
-    `https://api.lolhuman.xyz/api/nikparse?apikey=Yagami&nik=${nik}`,
-  ];
-
-  for (const url of APIs) {
-    try {
-      const r = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!r.ok) continue;
-      const ct = r.headers.get('content-type') || '';
-      if (!ct.includes('json')) continue;
-      const data = await r.json();
-      // Cek ada data wilayah
-      const d = data?.data || data?.result || data;
-      if (d?.provinsi || d?.province || d?.kota || d?.city) {
-        // Merge dengan local parser untuk data yang lebih lengkap
-        const local = parseNikLocal(nik);
-        return res.status(200).json({
-          success: true,
-          data: {
-            ...local,
-            provinsi:   d.provinsi  || d.province  || local.provinsi,
-            kota:       d.kota      || d.city       || d.kabupaten || null,
-            kecamatan:  d.kecamatan || d.district   || null,
-            source: 'api',
-          }
-        });
-      }
-    } catch (e) {
-      console.warn('[parse] API failed:', e.message);
-    }
+  try {
+    const result = parseNikFull(nik);
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Gagal parse NIK: ' + err.message });
   }
-
-  // Semua API gagal → pakai local parser
-  const local = parseNikLocal(nik);
-  return res.status(200).json({ success: true, data: local });
 };
