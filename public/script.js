@@ -167,19 +167,23 @@ function renderInfoGrid(data, nik) {
         ? `<span class="gender-badge gender-f">♀ Perempuan</span>`
         : `<span class="gender-badge gender-m">♂ Laki-laki</span>`;
 
+    // Kota & kecamatan hanya tampil kalau ada di database
+    const kotaVal = d.kota && !d.kota.includes('Tidak ada') ? d.kota : null;
+    const kecVal  = d.kecamatan && !d.kecamatan.includes('Tidak ada') ? d.kecamatan : null;
+
     const items = [
-        { key: 'Provinsi',           icon: 'fa-map',            val: d.provinsi   || '-' },
-        { key: 'Kabupaten/Kota',     icon: 'fa-city',           val: d.kota       || '(data dari API)' },
-        { key: 'Kecamatan',          icon: 'fa-location-dot',   val: d.kecamatan  || '(data dari API)' },
-        { key: 'Kode Wilayah',       icon: 'fa-code',           val: d.kodeWilayah || nik.slice(0,6) },
-        { key: 'Jenis Kelamin',      icon: 'fa-venus-mars',     val: genderLabel,  raw: true },
-        { key: 'Tanggal Lahir',      icon: 'fa-cake-candles',   val: d.tanggalLahir || '-', highlight: true },
-        { key: 'Hari Lahir',         icon: 'fa-calendar-day',   val: d.hariLahir  || '-' },
-        { key: 'Zodiak',             icon: 'fa-star',           val: d.zodiak     || '-' },
-        { key: 'Umur',               icon: 'fa-hourglass-half', val: d.umur       || '-', highlight: true },
-        { key: 'Ultah Berikutnya',   icon: 'fa-gift',           val: d.ultahBerikutnya || '-' },
-        { key: 'Nomor Urut',         icon: 'fa-list-ol',        val: d.nomorUrut  || nik.slice(12,16) },
-        { key: 'NIK Lengkap',        icon: 'fa-id-card',        val: nik.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4'), full: true, highlight: true },
+        { key: 'Provinsi',         icon: 'fa-map',            val: d.provinsi || '-' },
+        ...(kotaVal ? [{ key: 'Kabupaten/Kota', icon: 'fa-city',         val: kotaVal }] : []),
+        ...(kecVal  ? [{ key: 'Kecamatan',      icon: 'fa-location-dot', val: kecVal  }] : []),
+        { key: 'Kode Wilayah',     icon: 'fa-code',           val: d.kodeWilayah || nik.slice(0,6), mono: true },
+        { key: 'Jenis Kelamin',    icon: 'fa-venus-mars',     val: genderLabel, raw: true },
+        { key: 'Tanggal Lahir',    icon: 'fa-cake-candles',   val: d.tanggalLahir || '-', highlight: true },
+        { key: 'Hari Lahir',       icon: 'fa-calendar-day',   val: d.hariLahir  || '-' },
+        { key: 'Zodiak',           icon: 'fa-star',           val: d.zodiak     || '-' },
+        { key: 'Umur',             icon: 'fa-hourglass-half', val: d.umur       || '-', highlight: true },
+        { key: 'Ultah Berikutnya', icon: 'fa-gift',           val: d.ultahBerikutnya || '-' },
+        { key: 'Nomor Urut',       icon: 'fa-list-ol',        val: d.nomorUrut  || nik.slice(12,16) },
+        { key: 'NIK Lengkap',      icon: 'fa-id-card',        val: nik.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4'), full: true, highlight: true },
     ];
 
     grid.innerHTML = items.map(item => `
@@ -188,7 +192,7 @@ function renderInfoGrid(data, nik) {
                 <i class="fa-solid ${item.icon}"></i>
                 ${item.key}
             </div>
-            <div class="info-val ${item.highlight ? 'highlight' : ''}">
+            <div class="info-val ${item.highlight ? 'highlight' : ''}" style="${item.mono ? 'font-family:var(--font-mono);letter-spacing:0.1em' : ''}">
                 ${item.raw ? item.val : escHtml(String(item.val))}
             </div>
         </div>
